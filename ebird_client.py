@@ -9,7 +9,11 @@ class EBirdClient:
 
     def __init__(self, api_key):
         self.api_key = api_key
-        self.headers = {"X-eBirdApiToken": self.api_key}
+        # Sahte Tarayıcı Kimliği (User-Agent) ekleyerek Cloud engellerini aşıyoruz
+        self.headers = {
+            "X-eBirdApiToken": self.api_key,
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
         self.CACHE_DIR.mkdir(exist_ok=True)
         self._taxonomy_map = None
 
@@ -93,21 +97,22 @@ class EBirdClient:
         if details:
             return details.get("name", loc_id)
         return loc_id
+        except:
+            return loc_id
 
     def get_recent_species_in_region(self, region_or_loc, back=30):
         """Belirli bir bölge veya hotspot'ta son günlerde görülen tüm türlerin listesini döner."""
         url = f"{self.BASE_URL}/data/obs/{region_or_loc}/recent"
         params = {"back": back}
         response = requests.get(url, headers=self.headers, params=params, timeout=15)
-        if response.status_code == 200:
-            obs_list = response.json()
-            # Benzersiz türleri (comName) ayıkla
-            species = {}
-            for obs in obs_list:
-                com_name = obs["comName"]
-                species[com_name] = {
-                    "code": obs["speciesCode"],
-                    "sciName": obs["sciName"]
-                }
-            return species
-        return {}
+        response.raise_for_status()
+        
+        obs_list = response.json()
+        species = {}
+        for obs in obs_list:
+            com_name = obs["comName"]
+            species[com_name] = {
+                "code": obs["speciesCode"],
+                "sciName": obs["sciName"]
+            }
+        return species

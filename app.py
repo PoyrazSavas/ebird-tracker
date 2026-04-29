@@ -428,16 +428,24 @@ def main():
         loc_id = st.text_input("", placeholder="TR-34, L123...", key="loc_input", label_visibility="collapsed")
 
         if st.button(t['load_species'], use_container_width=True):
-            st.session_state.search_active = False
-            with st.spinner(t['spinner']):
-                st.session_state.region_species = client.get_recent_species_in_region(loc_id)
-            
-            if st.session_state.region_species:
-                new_bird = select_daily_bird(st.session_state.region_species, loc_id)
-                if new_bird:
-                    with st.spinner(t['botd_loading']):
-                        new_bird["wiki"] = get_wiki_data(new_bird["sci"], new_bird["com"])
-                    st.session_state.botd = {"bird": new_bird, "is_regional": True}
+            if not loc_id:
+                st.warning("Lütfen bir lokasyon girin!" if st.session_state.lang == 'tr' else "Please enter a location!")
+            else:
+                st.session_state.search_active = False
+                with st.spinner(t['spinner']):
+                    try:
+                        st.session_state.region_species = client.get_recent_species_in_region(loc_id)
+                        if not st.session_state.region_species:
+                            st.info("Bu bölgede son 30 günde gözlem bulunamadı." if st.session_state.lang == 'tr' else "No observations found in this region for the last 30 days.")
+                        
+                        # Bölgesel Bird of the Day
+                        if st.session_state.region_species:
+                            new_bird = select_daily_bird(st.session_state.region_species, loc_id)
+                            if new_bird:
+                                new_bird["wiki"] = get_wiki_data(new_bird["sci"], new_bird["com"])
+                                st.session_state.botd = {"bird": new_bird, "is_regional": True}
+                    except Exception as e:
+                        st.error(f"⚠️ API Bağlantı Hatası: {str(e)}")
 
         st.divider()
         st.markdown(f"#### 🦉 {t['h_sp']}")
