@@ -92,13 +92,14 @@ class EBirdClient:
         return response.json()
 
     def get_hotspot_name(self, loc_id):
-        """Hotspot ismini alır."""
-        details = self.get_hotspot_details(loc_id)
-        if details:
-            return details.get("name", loc_id)
+        """Hotspot ismini güvenli bir şekilde alır."""
+        try:
+            details = self.get_hotspot_details(loc_id)
+            if details and isinstance(details, dict):
+                return details.get("name", loc_id)
+        except Exception:
+            pass
         return loc_id
-        except:
-            return loc_id
 
     def get_recent_species_in_region(self, region_or_loc, back=30):
         """Belirli bir bölge veya hotspot'ta son günlerde görülen tüm türlerin listesini döner."""
